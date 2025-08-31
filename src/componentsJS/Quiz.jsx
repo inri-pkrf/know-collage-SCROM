@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import '../componentsCSS/Quiz.css';
-import { useLocation } from 'react-router-dom'; 
-
-import html2canvas from 'html2canvas'; 
+import { useLocation } from 'react-router-dom';
 
 // שאלות ותשובות כפי שהיו במבנה המקורי
 const questions = [
@@ -80,25 +78,23 @@ const correctAnswers = [
 
 // Quiz component
 const Quiz = ({ onReset }) => {
-  const location = useLocation(); // קבלת המידע מהניווט
-  const { firstName, lastName } = location.state || {}; // קבלת השם והשם משפחה
+  const location = useLocation(); 
+  const { firstName, lastName } = location.state || {}; 
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState([]);
   const [score, setScore] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  
   const handleAnswerSelect = (answer) => {
     const newAnswers = [...selectedAnswers];
     newAnswers[currentIndex] = answer;
     setSelectedAnswers(newAnswers);
-  
+
     if (answer === correctAnswers[currentIndex]) {
-      setScore(prevScore => Math.min(prevScore + 10, 100)); // להבטיח שהציון לא יעלה על 100
+      setScore(prevScore => Math.min(prevScore + 10, 100)); 
     }
   };
-  
 
   const nextQuestion = () => {
     if (currentIndex < questions.length - 1) {
@@ -111,47 +107,33 @@ const Quiz = ({ onReset }) => {
       setCurrentIndex(currentIndex - 1);
     }
   };
+const finishQuiz = () => {
+  setIsSubmitted(true);
 
-  const finishQuiz = () => {
-    setIsSubmitted(true);
-  };
+  const threshold = 70;
+
+  // שליחת הציון ל-SCORM
+  if (typeof window.finishTestSCROM === "function") {
+    window.finishTestSCROM(score, threshold);
+  } else {
+    console.warn("finishTestSCROM לא מוגדרת או לא נטענה כראוי");
+  }
+
+  // דיווח על סיום הלומדה
+  if (typeof window.reportComplete === "function") {
+    window.reportComplete();
+  } else {
+    console.warn("reportComplete לא מוגדרת או לא נטענה כראוי");
+  }
+};
+
+
 
   const retryQuiz = () => {
     setScore(0);
     setCurrentIndex(0);
     setSelectedAnswers([]);
     setIsSubmitted(false);
-  };
-
-  const captureAndShareScreenshot = () => {
-    const element = document.querySelector('.results');
-  
-    html2canvas(element).then((canvas) => {
-      const dataUrl = canvas.toDataURL('image/png'); 
-
-      const byteString = atob(dataUrl.split(',')[1]);
-      const arrayBuffer = new ArrayBuffer(byteString.length);
-      const uintArray = new Uint8Array(arrayBuffer);
-  
-      for (let i = 0; i < byteString.length; i++) {
-        uintArray[i] = byteString.charCodeAt(i);
-      }
-  
-      const blob = new Blob([uintArray], { type: 'image/png' });
-      const file = new File([blob], "screenshot.png", { type: 'image/png' });
-  
-      if (navigator.share) {
-        navigator.share({
-          title: 'תוצאת הבוחן',
-          text: 'הנה תוצאת הבוחן שלי!',
-          files: [file]
-        })
-        .then(() => console.log('הצלחה בשיתוף'))
-        .catch((error) => console.log('שיתוף נכשל:', error));
-      } else {
-        alert('הדפדפן שלך לא תומך בשיתוף');
-      }
-    });
   };
 
   const answerOptions = [answers1[currentIndex], answers2[currentIndex], answers3[currentIndex], answers4[currentIndex]];
@@ -205,14 +187,14 @@ const Quiz = ({ onReset }) => {
       ) : (
         <div className="results">
           <p className='score'>ציון: {score}</p>
-          <p className="user-name">שם: {firstName} {lastName}</p> {/* הצגת השם ושם המשפחה */}
+          <p className="user-name">שם: {firstName} {lastName}</p>
           {score >= 70 ? (
             <div>
-              <p className='message'>מזל טוב!<br></br> סיימת את הבוחן בהצלחה!</p>
-              <button className='share-btn' onClick={captureAndShareScreenshot}>שתפו תוצאה עם צילום מסך</button>
+              <p className='message'>מזל טוב!<br />סיימת את הבוחן בהצלחה!</p>
               <button className='try-button' onClick={retryQuiz}>נסו שוב</button>
-              <button  onClick={onReset} className="reset-btn">
-להתחלת הלומדה מחדש      </button>
+              <button onClick={onReset} className="reset-btn">
+                להתחלת הלומדה מחדש
+              </button>
             </div>
           ) : (
             <div>
