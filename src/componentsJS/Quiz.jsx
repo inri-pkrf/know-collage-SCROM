@@ -90,26 +90,24 @@ const Quiz = ({ onReset }) => {
   const [score, setScore] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
+  // בחירת תשובה
   const handleAnswerSelect = (answer) => {
     const newAnswers = [...selectedAnswers];
     newAnswers[currentIndex] = answer;
     setSelectedAnswers(newAnswers);
   };
 
+  // ניווט
   const nextQuestion = () => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
+    if (currentIndex < questions.length - 1) setCurrentIndex(currentIndex + 1);
   };
-
   const prevQuestion = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    }
+    if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
   };
 
+  // סיום הבוחן ודיווח ל-SCORM
   const finishQuiz = () => {
-    // חישוב הציון רק בסיום
+    const maxScore = questions.length * 10;
     const finalScore = selectedAnswers.reduce((acc, ans, idx) => {
       return ans === correctAnswers[idx] ? acc + 10 : acc;
     }, 0);
@@ -118,21 +116,25 @@ const Quiz = ({ onReset }) => {
     setIsSubmitted(true);
 
     const threshold = 70;
+    const scaledScore = finalScore / maxScore; // 0–1
 
-    // דיווח SCORM
-    if (typeof window.finishTestSCORM === "function") {
-      window.finishTestSCORM(finalScore, threshold);
-    } else {
-      console.warn("finishTestSCORM לא מוגדרת או לא נטענה כראוי");
-    }
+    // דחייה קצרה לוודא שה־SCORM API מוכן
+    setTimeout(() => {
+      if (typeof window.finishTestSCORM === "function") {
+        window.finishTestSCORM(finalScore, threshold);
+      } else {
+        console.warn("finishTestSCORM לא מוגדרת או לא נטענה כראוי");
+      }
 
-    if (typeof window.reportComplete === "function") {
-      window.reportComplete();
-    } else {
-      console.warn("reportComplete לא מוגדרת או לא נטענה כראוי");
-    }
+      if (typeof window.reportComplete === "function") {
+        window.reportComplete();
+      } else {
+        console.warn("reportComplete לא מוגדרת או לא נטענה כראוי");
+      }
+    }, 100);
   };
 
+  // ניסיון מחדש
   const retryQuiz = () => {
     setScore(0);
     setCurrentIndex(0);
@@ -154,11 +156,9 @@ const Quiz = ({ onReset }) => {
       {!isSubmitted ? (
         <div className="Quiz">
           <p className="question-number">שאלה {currentIndex + 1} מתוך {questions.length}</p>
-
           <div className="progress-bar-container">
             <div className="progress-bar" style={{ width: progressWidth }}></div>
           </div>
-
           <p className="question">{questions[currentIndex]}</p>
 
           <div className="answers">
@@ -175,14 +175,14 @@ const Quiz = ({ onReset }) => {
 
           <div className="navigation-buttons">
             <button
-              className={` ${currentIndex === 0 ? 'button-disabled' : 'prev-button'}`}
+              className={currentIndex === 0 ? 'button-disabled' : 'prev-button'}
               onClick={prevQuestion}
               disabled={currentIndex === 0}
             >
               שאלה קודמת
             </button>
             <button
-              className={` ${selectedAnswers[currentIndex] === undefined || currentIndex === questions.length - 1 ? 'button-disabled' : 'next-button'}`}
+              className={selectedAnswers[currentIndex] === undefined || currentIndex === questions.length - 1 ? 'button-disabled' : 'next-button'}
               onClick={nextQuestion}
               disabled={selectedAnswers[currentIndex] === undefined || currentIndex === questions.length - 1}
             >
