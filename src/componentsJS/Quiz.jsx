@@ -103,30 +103,27 @@ const Quiz = ({ onReset }) => {
   };
 
   // סיום המשחק + חישוב ציון
-  const finishQuiz = () => {
+const finishQuiz = () => {
+    // חישוב הציון הסופי
     const finalScore = selectedAnswers.reduce((acc, answer, idx) => {
-      return acc + (answer === correctAnswers[idx] ? 10 : 0);
+        return acc + (answer === correctAnswers[idx] ? 10 : 0);
     }, 0);
 
     setScore(finalScore);
     setIsSubmitted(true);
-    submitScoreToSCORM(finalScore);
-  };
 
-  // שליחת ציון ל-SCORM כולל lesson_status
-  const submitScoreToSCORM = (grade) => {
-    const finalScore = Math.min(Math.max(grade, 0), 100);
-
-    if (window.ScormProcessSetValue && window.ScormProcessCommit) {
-      window.ScormProcessSetValue("cmi.core.score.raw", finalScore);
-      window.ScormProcessSetValue("cmi.core.lesson_status", finalScore >= 70 ? "completed" : "incomplete");
-      window.ScormProcessCommit();
-      console.log(`הציון נשלח ל-SCORM: ${finalScore}`);
+    // דיווח ל-SCORM
+    if (typeof window.finishTestSCROM === "function") {
+        window.finishTestSCROM(finalScore, 0); // סף = 0, רק דיווח ציון
+        console.log(`הציון נשלח ל-SCORM: ${finalScore}`);
+    } else if (typeof window.ScormProcessSetValue === "function") {
+        window.ScormProcessSetValue("cmi.core.score.raw", finalScore);
+        window.ScormProcessCommit();
+        console.log(`הציון נשלח ל-SCORM (חלופה): ${finalScore}`);
     } else {
-      console.warn("SCORM API לא זמין. הציון לא נשלח ל-LMS.");
-      console.log(`ציון שהמשתמש קיבל: ${finalScore}`);
+        console.warn("SCORM API לא זמין. הציון לא נשלח ל-LMS.");
     }
-  };
+};
 
   // איפוס המשחק
   const retryQuiz = () => {
