@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import '../componentsCSS/Quiz.css';
 import { useLocation } from 'react-router-dom';
 
@@ -12,7 +12,7 @@ const questions = [
   "לפי כמות הדגלים שהופיעו בפרק הקש\"ח, נציגים מכמה מדינות ביקרו אצלינו?",
   "כמה גנרלים ספרדים היו פה?",
   "מה עשתה המכללה בזמן המלחמה?",
-  "כמה מלונות ניהל משל\"ט ינאי בשיא במהלך מלחמת 'חרבות ברזל'?",
+  "כמה מלונות ניהל משל\"ט ינאי בשיא במהלך מלחמת 'חרבות ברזל?",
   "מה הסלוגן של נווה איתנים?"
 ];
 
@@ -28,7 +28,6 @@ const answers1 = [
   "א. 465",
   "א. הכי מוכנה בארץ"
 ];
-
 const answers2 = [
   "ב. ללמוד על פעילויות המכללה",
   "ב. כ-1,250",
@@ -41,7 +40,6 @@ const answers2 = [
   "ב. 564",
   "ב. איתנים ונהנים"
 ];
-
 const answers3 = [
   "ג. לחפש תוכן מקצועי",
   "ג. כ-1,500",
@@ -54,7 +52,6 @@ const answers3 = [
   "ג. 456",
   "ג. הכי מוכנים לחירום"
 ];
-
 const answers4 = [
   "ד. כל התשובות נכונות",
   "ד. מעל 1,700",
@@ -82,59 +79,52 @@ const correctAnswers = [
 ];
 
 const Quiz = ({ onReset }) => {
-  const location = useLocation(); 
-  const { firstName, lastName } = location.state || {}; 
+  const location = useLocation();
+  const { firstName, lastName } = location.state || {};
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState([]);
   const [score, setScore] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [scormReady, setScormReady] = useState(false);
 
-  // בדיקה אם SCORM API מוכן
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (window.finishTestSCORM && window.reportComplete) {
-        setScormReady(true);
-        clearInterval(interval);
-      }
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
+  // בחירת תשובה
   const handleAnswerSelect = (answer) => {
     const newAnswers = [...selectedAnswers];
     newAnswers[currentIndex] = answer;
     setSelectedAnswers(newAnswers);
+
+    // עדכון הציון
+    if (answer === correctAnswers[currentIndex]) {
+      setScore(prev => Math.min(prev + 10, 100));
+    }
   };
 
+  // ניווט בין שאלות
   const nextQuestion = () => {
     if (currentIndex < questions.length - 1) setCurrentIndex(currentIndex + 1);
   };
-
   const prevQuestion = () => {
     if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
   };
 
+  // סיום המשחק
   const finishQuiz = () => {
-  const finalScore = selectedAnswers.reduce((acc, ans, idx) => (
-    ans === correctAnswers[idx] ? acc + 10 : acc
-  ), 0);
+    setIsSubmitted(true);
+    submitGradeToSCORM(score);
+  };
 
-  setScore(finalScore);
-  setIsSubmitted(true);
+  // שליחת ציון ל-SCORM
+  const submitGradeToSCORM = (grade) => {
+    const finalGrade = Math.min(Math.max(grade, 0), 100);
+    if (window.finishTestSCROM) {
+      window.finishTestSCROM(finalGrade);
+      console.log(`הציון נשלח ל-SCORM: ${finalGrade}`);
+    } else {
+      console.warn('finishTestSCROM לא נמצאה');
+    }
+  };
 
-  const threshold = 70;
-
-  if (window.finishTestSCORM && window.reportComplete) {
-    window.finishTestSCROM(finalScore, threshold);
-    window.reportComplete();
-  } else {
-    console.warn("SCORM API לא מוכן – הציון לא דווח");
-  }
-};
-
-
+  // איפוס המשחק
   const retryQuiz = () => {
     setScore(0);
     setCurrentIndex(0);
@@ -148,7 +138,6 @@ const Quiz = ({ onReset }) => {
     answers3[currentIndex],
     answers4[currentIndex]
   ];
-
   const progressWidth = `${((currentIndex + 1) / questions.length) * 100}%`;
 
   return (
@@ -156,10 +145,13 @@ const Quiz = ({ onReset }) => {
       {!isSubmitted ? (
         <div className="Quiz">
           <p className="question-number">שאלה {currentIndex + 1} מתוך {questions.length}</p>
+
           <div className="progress-bar-container">
             <div className="progress-bar" style={{ width: progressWidth }}></div>
           </div>
+
           <p className="question">{questions[currentIndex]}</p>
+
           <div className="answers">
             {answerOptions.map((answer, index) => (
               <button
@@ -171,22 +163,24 @@ const Quiz = ({ onReset }) => {
               </button>
             ))}
           </div>
+
           <div className="navigation-buttons">
             <button
-              className={` ${currentIndex === 0 ? 'button-disabled' : 'prev-button'}`}
+              className={`${currentIndex === 0 ? 'button-disabled' : 'prev-button'}`}
               onClick={prevQuestion}
               disabled={currentIndex === 0}
             >
               שאלה קודמת
             </button>
             <button
-              className={` ${selectedAnswers[currentIndex] === undefined || currentIndex === questions.length - 1 ? 'button-disabled' : 'next-button'}`}
+              className={`${selectedAnswers[currentIndex] === undefined || currentIndex === questions.length - 1 ? 'button-disabled' : 'next-button'}`}
               onClick={nextQuestion}
               disabled={selectedAnswers[currentIndex] === undefined || currentIndex === questions.length - 1}
             >
               שאלה הבאה
             </button>
           </div>
+
           {currentIndex === questions.length - 1 && (
             <button className='end-btn' onClick={finishQuiz}>סיים את המשחק</button>
           )}
@@ -199,7 +193,7 @@ const Quiz = ({ onReset }) => {
             <div>
               <p className='message'>מזל טוב!<br />סיימת את הבוחן בהצלחה!</p>
               <button className='try-button' onClick={retryQuiz}>נסו שוב</button>
-              <button onClick={onReset} className="reset-btn">להתחלת הלומדה מחדש</button>
+              <button onClick={onReset} className="reset-btn">התחלת הלומדה מחדש</button>
             </div>
           ) : (
             <div>
