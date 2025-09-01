@@ -108,21 +108,11 @@ const finishQuiz = () => {
     const finalScore = selectedAnswers.reduce((acc, answer, idx) => {
         return acc + (answer === correctAnswers[idx] ? 10 : 0);
     }, 0);
-
     setScore(finalScore);
     setIsSubmitted(true);
-
-    // דיווח ל-SCORM
-    if (typeof window.finishTestSCROM === "function") {
-        window.finishTestSCROM(finalScore, 0); // סף = 0, רק דיווח ציון
+        window.finishTestSCROM(finalScore, 0);
         console.log(`הציון נשלח ל-SCORM: ${finalScore}`);
-    } else if (typeof window.ScormProcessSetValue === "function") {
-        window.ScormProcessSetValue("cmi.core.score.raw", finalScore);
-        window.ScormProcessCommit();
-        console.log(`הציון נשלח ל-SCORM (חלופה): ${finalScore}`);
-    } else {
-        console.warn("SCORM API לא זמין. הציון לא נשלח ל-LMS.");
-    }
+
 };
 
   // איפוס המשחק
