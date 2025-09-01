@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import '../componentsCSS/Quiz.css';
 import { useLocation } from 'react-router-dom';
 
@@ -92,11 +92,6 @@ const Quiz = ({ onReset }) => {
     const newAnswers = [...selectedAnswers];
     newAnswers[currentIndex] = answer;
     setSelectedAnswers(newAnswers);
-
-    // עדכון הציון (10 נקודות לכל תשובה נכונה)
-    if (answer === correctAnswers[currentIndex]) {
-      setScore(prev => Math.min(prev + 10, 100));
-    }
   };
 
   // ניווט בין שאלות
@@ -107,25 +102,31 @@ const Quiz = ({ onReset }) => {
     if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
   };
 
-  // סיום המשחק
+  // סיום המשחק + חישוב ציון
   const finishQuiz = () => {
+    const finalScore = selectedAnswers.reduce((acc, answer, idx) => {
+      return acc + (answer === correctAnswers[idx] ? 10 : 0);
+    }, 0);
+
+    setScore(finalScore);
     setIsSubmitted(true);
-    submitScoreToSCORM(score);
+    submitScoreToSCORM(finalScore);
   };
 
-  // שליחת ציון בלבד ל-SCORM
-const submitScoreToSCORM = (grade) => {
-  const finalScore = Math.min(Math.max(grade, 0), 100);
-  if (window.ScormProcessSetValue && window.ScormProcessCommit) {
-    window.ScormProcessSetValue("cmi.core.score.raw", finalScore);
-    window.ScormProcessCommit();
-    console.log(`הציון נשלח ל-SCORM: ${finalScore}`);
-  } else {
-    console.warn("SCORM API לא זמין. הציון לא נשלח ל-LMS, אבל הדפסנו בקונסול.");
-    console.log(`ציון שהמשתמש קיבל: ${finalScore}`);
-  }
-};
+  // שליחת ציון ל-SCORM כולל lesson_status
+  const submitScoreToSCORM = (grade) => {
+    const finalScore = Math.min(Math.max(grade, 0), 100);
 
+    if (window.ScormProcessSetValue && window.ScormProcessCommit) {
+      window.ScormProcessSetValue("cmi.core.score.raw", finalScore);
+      window.ScormProcessSetValue("cmi.core.lesson_status", finalScore >= 70 ? "completed" : "incomplete");
+      window.ScormProcessCommit();
+      console.log(`הציון נשלח ל-SCORM: ${finalScore}`);
+    } else {
+      console.warn("SCORM API לא זמין. הציון לא נשלח ל-LMS.");
+      console.log(`ציון שהמשתמש קיבל: ${finalScore}`);
+    }
+  };
 
   // איפוס המשחק
   const retryQuiz = () => {
