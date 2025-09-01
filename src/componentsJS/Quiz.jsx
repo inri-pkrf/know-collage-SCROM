@@ -109,7 +109,7 @@ const Quiz = ({ onReset }) => {
   // שליחת הציון ל-SCORM אוטומטית ברגע שסיימנו
   useEffect(() => {
     if (isSubmitted) {
-      window.finishTestSCROM(score, 0); // שליחת הציון למערכת
+      window.finishTestSCROM(score, 70); // שליחת הציון למערכת
       console.log(`הציון הסופי נשלח ל-SCORM: ${score}`);
     }
   }, [isSubmitted, score]);
