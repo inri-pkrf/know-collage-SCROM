@@ -127,7 +127,7 @@ const Quiz = ({ onReset }) => {
   const threshold = 70;
 
   if (window.finishTestSCORM && window.reportComplete) {
-    window.finishTestSCORM(finalScore, threshold);
+    window.finishTestSCROM(finalScore, threshold);
     window.reportComplete();
   } else {
     console.warn("SCORM API לא מוכן – הציון לא דווח");
