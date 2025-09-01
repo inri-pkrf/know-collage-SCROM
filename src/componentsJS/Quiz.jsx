@@ -93,7 +93,7 @@ const Quiz = ({ onReset }) => {
     newAnswers[currentIndex] = answer;
     setSelectedAnswers(newAnswers);
 
-    // עדכון הציון
+    // עדכון הציון (10 נקודות לכל תשובה נכונה)
     if (answer === correctAnswers[currentIndex]) {
       setScore(prev => Math.min(prev + 10, 100));
     }
@@ -110,19 +110,22 @@ const Quiz = ({ onReset }) => {
   // סיום המשחק
   const finishQuiz = () => {
     setIsSubmitted(true);
-    submitGradeToSCORM(score);
+    submitScoreToSCORM(score);
   };
 
-  // שליחת ציון ל-SCORM
-  const submitGradeToSCORM = (grade) => {
-    const finalGrade = Math.min(Math.max(grade, 0), 100);
-    if (window.finishTestSCROM) {
-      window.finishTestSCROM(finalGrade);
-      console.log(`הציון נשלח ל-SCORM: ${finalGrade}`);
-    } else {
-      console.warn('finishTestSCROM לא נמצאה');
-    }
-  };
+  // שליחת ציון בלבד ל-SCORM
+const submitScoreToSCORM = (grade) => {
+  const finalScore = Math.min(Math.max(grade, 0), 100);
+  if (window.ScormProcessSetValue && window.ScormProcessCommit) {
+    window.ScormProcessSetValue("cmi.core.score.raw", finalScore);
+    window.ScormProcessCommit();
+    console.log(`הציון נשלח ל-SCORM: ${finalScore}`);
+  } else {
+    console.warn("SCORM API לא זמין. הציון לא נשלח ל-LMS, אבל הדפסנו בקונסול.");
+    console.log(`ציון שהמשתמש קיבל: ${finalScore}`);
+  }
+};
+
 
   // איפוס המשחק
   const retryQuiz = () => {
@@ -189,18 +192,11 @@ const Quiz = ({ onReset }) => {
         <div className="results">
           <p className='score'>ציון: {score}</p>
           <p className="user-name">שם: {firstName} {lastName}</p>
-          {score >= 70 ? (
-            <div>
-              <p className='message'>מזל טוב!<br />סיימת את הבוחן בהצלחה!</p>
-              <button className='try-button' onClick={retryQuiz}>נסו שוב</button>
-              <button onClick={onReset} className="reset-btn">התחלת הלומדה מחדש</button>
-            </div>
-          ) : (
-            <div>
-              <p className='message'>אוי, לא נורא</p>
-              <button className='try-btn' onClick={retryQuiz}>נסו שוב</button>
-            </div>
-          )}
+          <div>
+            <p className='message'>{score >= 70 ? "מזל טוב! סיימת בהצלחה!" : "אוי, לא נורא"}</p>
+            <button className='try-button' onClick={retryQuiz}>נסו שוב</button>
+            <button onClick={onReset} className="reset-btn">התחלת הלומדה מחדש</button>
+          </div>
         </div>
       )}
     </div>
