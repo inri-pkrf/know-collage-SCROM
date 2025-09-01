@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import '../componentsCSS/Quiz.css';
 import { useLocation } from 'react-router-dom';
 
-// שאלות ותשובות
 const questions = [
   "מה אפשר לעשות באתר המכללה?",
   "כמה פרטי מידע יש בספרייה הלאומית לחירום?",
@@ -87,11 +86,16 @@ const Quiz = ({ onReset }) => {
   const [score, setScore] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // בחירת תשובה
+  // בחירת תשובה וחישוב ציון תוך כדי
   const handleAnswerSelect = (answer) => {
     const newAnswers = [...selectedAnswers];
     newAnswers[currentIndex] = answer;
     setSelectedAnswers(newAnswers);
+
+    const currentScore = newAnswers.reduce((acc, ans, idx) => {
+      return acc + (ans === correctAnswers[idx] ? 10 : 0);
+    }, 0);
+    setScore(currentScore);
   };
 
   // ניווט בין שאלות
@@ -102,20 +106,19 @@ const Quiz = ({ onReset }) => {
     if (currentIndex > 0) setCurrentIndex(currentIndex - 1);
   };
 
-  // סיום המשחק + חישוב ציון
-const finishQuiz = () => {
-    // חישוב הציון הסופי
-    const finalScore = selectedAnswers.reduce((acc, answer, idx) => {
-        return acc + (answer === correctAnswers[idx] ? 10 : 0);
-    }, 0);
-    setScore(finalScore);
+  // שליחת הציון ל-SCORM אוטומטית ברגע שסיימנו
+  useEffect(() => {
+    if (isSubmitted) {
+      window.finishTestSCROM(score, 0); // שליחת הציון למערכת
+      console.log(`הציון הסופי נשלח ל-SCORM: ${score}`);
+    }
+  }, [isSubmitted, score]);
+
+  // סיום המשחק
+  const finishQuiz = () => {
     setIsSubmitted(true);
-        window.finishTestSCROM(finalScore, 0);
-        console.log(`הציון נשלח ל-SCORM: ${finalScore}`);
+  };
 
-};
-
-  // איפוס המשחק
   const retryQuiz = () => {
     setScore(0);
     setCurrentIndex(0);
@@ -178,10 +181,9 @@ const finishQuiz = () => {
         </div>
       ) : (
         <div className="results">
-          <p className='score'>ציון: {score}</p>
+          <p className='score'>ציון סופי: {score}</p>
           <p className="user-name">שם: {firstName} {lastName}</p>
           <div>
-            <p className='message'>{score >= 70 ? "מזל טוב! סיימת בהצלחה!" : "אוי, לא נורא"}</p>
             <button className='try-button' onClick={retryQuiz}>נסו שוב</button>
             <button onClick={onReset} className="reset-btn">התחלת הלומדה מחדש</button>
           </div>
