@@ -57,7 +57,7 @@ function FinalScreen() {
   return (
     <div className="FinalScreen">
       <p className="blue-text-final">
-        כל הכבוד על האיתנות! הגעת לסיום!<br/> גם של המשחק וגם של ההיכרות הראשונית עם המכללה
+        כל הכבוד על האיתנות! הגעת לסיום!<br/> של ההיכרות הראשונית עם המכללה
       </p>
       <p className="grey-big-final">שנעבור לבדוק מה הצלחת לזכור?</p>
       

@@ -45,11 +45,11 @@ function App() {
     navigate("/"); // חזרה לעמוד הפתיחה
   };
   
-  useEffect(() => {
-    if (allPages.every(p => visitedPages.includes(p))) {
-      navigate("/final");
-    }
-  }, [visitedPages, navigate]);
+  // useEffect(() => {
+  //   if (allPages.every(p => visitedPages.includes(p))) {
+  //     navigate("/final");
+  //   }
+  // }, [visitedPages, navigate]);
 
   return (
     <div className="App">

@@ -8,7 +8,8 @@
     z-index: 2000; /* Ensure it appears above the header */
     padding-top: 2vh;
     overflow-y: scroll;
-    text-align: right; /* Aligns all text to the right */
+    overflow-x: hidden;
+    text-align: right; 
     direction: rtl;
 }
 
